@@ -1,0 +1,62 @@
+local Sc_testGunView = {}
+
+Sc_testGunView.Properties = {
+	--{name = "health", type = "number", tooltip = "Current health", default = 100},
+}
+
+function Sc_testGunView:Init()
+end
+
+function Sc_testGunView:LocalInit()
+	self.ply = self:GetEntity()
+	self.usr = self.ply:GetUser()
+	self.nply = self.usr:GetUsername()
+	
+	self.freeMov = false 
+end 
+
+function Sc_testGunView:ShowGun(boolIn, gun)
+	if IsServer() then 
+		self:SendToLocal("ShowGun", boolIn, gun)
+	else 
+		print("Sc_testGunView >> ShowGun:", boolIn, gun )
+		if gun then 
+			self.currentGun = gun 
+			self.origRelRot = gun:GetRelativeRotation()
+			gun.visible = boolIn  
+		end 
+	end 
+end 
+
+function Sc_testGunView:PlayerSit()
+	if IsServer() then 
+		self:SendToLocal("PlayerSit")
+	else 
+		self:ActivateAim(true)
+	end 
+end 
+
+function Sc_testGunView:PlayerUnSit()
+	if IsServer() then 
+		self:SendToLocal("PlayerUnSit")
+	else 
+		self:ActivateAim(false)
+	end 
+end 
+
+function Sc_testGunView:ActivateAim(boolIn)
+	if self.currentGun then 
+		self.aimActive = boolIn  
+		print("Sc_testGunView >> ActivateAim:", boolIn)
+	end 
+end 
+
+function Sc_testGunView:LocalOnTick(dt)
+	if not self.currentGun or self.aimActive == false then return end 
+	local vf, vt = self.ply:GetLookAt()
+	local vdcon = (vt - vf):Normalize()
+	local gunRot = Rotation.FromVector(vdcon)
+	self.currentGun:SetRelativeRotation(gunRot)
+end 
+
+return Sc_testGunView
