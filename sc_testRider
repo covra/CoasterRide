@@ -1,0 +1,24 @@
+local Sc_testRider = {}
+
+Sc_testRider.Properties = {
+	{name = "testWagonSit", type = "entity", },
+}
+
+function Sc_testRider:Init()
+end
+
+function Sc_testRider:OnTriggerEnter(player, trg)
+	local p = self.properties
+	if player and player:IsA(Character) then 
+		--avoid recursive calls 
+		local vehicleRoot = p.testWagonSit:GetParent()
+		local trgVehicle = vehicleRoot.sc_testEnterWagon:GetTriggerVehicle()
+		if trgVehicle then 
+			trgVehicle.active = false 
+		end 
+		--ask for sit 
+		player:SendToScripts("Sit", player, p.testWagonSit)
+	end 
+end 
+
+return Sc_testRider
