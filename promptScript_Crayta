@@ -1,0 +1,90 @@
+local PromptsScript = {}
+
+PromptsScript.Properties = {
+	{ name = "pressText", type = "text", tooltip="Expand a button and an action, usually set to 'Press {button} to {action}'"},
+}
+
+PromptsScript.PromptNames = {"primary","secondary","extra1","extra2","extra3","extra4","extra5","jump","interact","crouch","sprint","previous","next"}
+
+for _, promptName in ipairs(PromptsScript.PromptNames) do
+	table.insert(PromptsScript.Properties, {
+		name = promptName .. "Instruction",
+		type = "text",
+	})
+end
+
+function PromptsScript:LocalInit()
+
+	self.promptsWidget = self:GetEntity().promptsWidget
+
+	if self.promptsWidget then
+	
+		self:Schedule(
+			function()
+				while true do
+					self:Update()
+					Wait(0.1)
+				end
+			end
+		)
+	end
+		
+end
+
+function PromptsScript:GetButtonPrompts(prompts)
+	for _, promptName in pairs(PromptsScript.PromptNames) do
+		local property = self.properties[promptName .. "Instruction"]
+		if tostring(property) ~= "" then
+			prompts[promptName] = property
+		end
+	end
+end
+
+function PromptsScript:Update()
+
+	local prompts = {}
+	
+	self:GetEntity():SendToScripts("GetButtonPrompts", prompts)
+	local player = self:GetEntity():GetPlayer()
+	if player then 
+		
+		player:SendToScripts("GetButtonPrompts", prompts)
+		
+		-- Inventory package friendly helper
+		if player.inventoryViewScript and player.inventoryViewScript.properties.heldEntity then
+			player.inventoryViewScript.properties.heldEntity:SendToScripts("GetButtonPrompts", prompts)
+		end
+		
+		local interactEntity, hitResult = player:GetInteraction()
+		if interactEntity then
+			interactEntity:SendToScripts("GetInteractPrompt", prompts)
+			-- if the thing we're looking at has calls bound to onInteract
+			-- then find the scripts involved and try calling GetInteractPrompt
+			-- on them.
+			if interactEntity.onInteract:HasBindings() then
+				for _, binding in ipairs(interactEntity.onInteract:GetAllBindings()) do
+					binding.script:SendToScript("GetInteractPrompt", prompts)
+				end		
+			end
+		end
+	end
+	
+	visiblePrompts = {}
+	for _, promptName in pairs(PromptsScript.PromptNames) do
+		local promptText = prompts[promptName]
+		if promptText then
+			local buttonStr = "{" .. promptName .. "-icon}"
+			-- if a (lossy) string conversion of the prompt contains expansion for button then do that expansion here
+			if tostring(promptText):find(buttonStr, 1, true) then
+				table.insert(visiblePrompts, promptText:Format({button = buttonStr}))
+			-- Otherwise assume its a simple instruction "to Jump" for example, and expand using the pressText property
+			else
+				table.insert(visiblePrompts, self.properties.pressText:Format({button = buttonStr, action = promptText}))
+			end
+		end
+	end
+	self.promptsWidget.js.prompts.entries = visiblePrompts
+	
+end
+
+return PromptsScript
