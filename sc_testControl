@@ -1,0 +1,118 @@
+local Sc_testControl = {}
+
+Sc_testControl.Properties = {
+	{name = "manualDrive", type = "boolean", tooltip = "", default = false},
+}
+
+function Sc_testControl:Init()
+	self.ply = self:GetEntity()
+	self.usr = self.ply:GetUser()
+	self.nply = self.usr:GetUsername()
+end
+
+function Sc_testControl:LocalInit()
+	self.ply = self:GetEntity()
+	self.usr = self.ply:GetUser()
+	self.nply = self.usr:GetUsername()
+end 
+
+function Sc_testControl:LocalOnButtonPressed(btn)
+	--attached?
+	local isDriving = self.ply.sc_testAttach.properties.isDriving 
+	if isDriving == true then 
+		if btn == "forward" then 
+			self:SetThrottle (true)
+		elseif btn == "backward" then 
+			self:SetThrottle (false)
+		elseif btn == "left" then 
+			self:TurnEngine(true)
+		elseif btn == "righ" then  
+			self:TurnEngine(false)
+		elseif btn == "extra1" then 
+			self:GetUpFromSocket()
+		end 
+	else 
+		return 
+	end 
+
+end 
+
+function Sc_testControl:GetUpFromSocket()
+	if IsServer() then 
+		self.ply:SendToScripts("GetUp")
+		self:TurnEngine(false)
+	else 
+		self:SendToServer("GetUpFromSocket")
+	end 
+end 
+
+function Sc_testControl:SetThrottle(boolIn)
+	if IsServer() then 
+		if self.properties.manualDrive == false then return end 
+		local actionMove = false 
+		if boolIn == true then 			
+			self.Throttle = self.Throttle + 0.2
+			self.Throttle = math.clamp(self.Throttle, 0, 100)
+			if self.Throttle >= 100 then 
+				self.ply:SendToScripts("AddNotification", "Max speed")
+			else 
+				self.ply:SendToScripts("AddNotification", "Increased speed")
+				actionMove = true 
+			end 
+		elseif boolIn == false then 
+			self.Throttle = Throttle - 1
+			self.Throttle = math.clamp(self.Throttle, 0, 100)
+			if self.Throttle <= 0 then 
+				self.ply:SendToScripts("AddNotification", "Min speed")
+			else 
+				self.ply:SendToScripts("AddNotification", "Decreased speed")
+				actionMove = true 
+			end 
+		end 
+		local v = self.ply.sc_testAttach.properties.vehicleRoot
+		if v and actionMove == true then 
+			local percentage = self.Throttle			
+			v:SendToScripts("SetDesiredThrottle", percentage)
+		end 
+	else 
+		self:SendToServer("SetThrottle", boolIn)
+	end 
+end 
+
+function Sc_testControl:TurnEngine(boolIn)
+	if IsServer() then 
+		local v = self.ply.sc_testAttach.properties.vehicleRoot		
+		if v then 
+			print("Sc_testControl >> TurnEngine :", boolIn, "is Vehcicle?", v:GetName())
+			if boolIn == true and self.properties.manualDrive == false then 
+				--activa drive manual 
+				v:SendToScripts("SetActive", true)
+				self.Throttle = 0
+				self.ply:SendToScripts("AddNotification", "Engine On")
+				self.properties.manualDrive = true 
+				if self.tskEngineOff then 
+					self.tskEngineOff:Cancel()
+				end 
+			elseif boolIn == false  and self.properties.manualDrive == true then	
+				--decelera hasta 0 
+				if self.tskEngineOff then 
+					self.tskEngineOff:Cancel()
+				end 			
+				self.Throttle = 0
+				self:SetThrottle(false)
+				self.ply:SendToScripts("AddNotification", "Engine Off")
+				self.properties.manualDrive = false 
+				self.tskEngineOff = self:Schedule(function()
+					while self.Throttle > 0 do 
+						self:SetThrottle(false)
+						Wait(5)
+					end  
+				end)
+			end 
+		end 
+	else 
+		self:SendToServer("TurnEngine", boolIn)
+	end 
+end 
+
+return Sc_testControl
