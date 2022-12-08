@@ -1,0 +1,40 @@
+local Sc_testEnterWagon = {}
+
+Sc_testEnterWagon.Properties = {
+	{name = "sitSocket", type = "entity", },
+	{name = "trgDriver", type = "entity",},
+	{name = "gun", type = "entity",},
+}
+
+local isOccupied = false 
+
+function Sc_testEnterWagon:Init()
+end
+
+function Sc_testEnterWagon:GetTriggerVehicle()
+	return self.properties.trgDriver
+end 
+
+function Sc_testEnterWagon:GetGunVehicle()
+	return self.properties.gun 
+end 
+
+function Sc_testEnterWagon:OnTriggerEnter(player, trg)
+	local p = self.properties 
+	if player and player:IsA(Character) then 
+		if isOccupied == true then 
+			--ocupada 
+		else 
+			player:SendToScripts("Sit", player, p.sitSocket)
+		end 
+	end 
+end 
+
+function Sc_testEnterWagon:OnTriggerExit(player, trg)
+	if player and player:IsA(Character) then 
+		isOccupied = false 
+		print("Sc_testEnterWagon >> isOccupied:", isOccupied)
+	end 
+end 
+
+return Sc_testEnterWagon
