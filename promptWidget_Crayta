@@ -1,0 +1,65 @@
+<html>
+    <head>
+        <script type="text/javascript" src="coui://uiresources/js/crayta.js"></script>
+        <style type="text/css">
+        
+	body {
+		margin: 0;
+		border: none;
+		padding: 0;
+		font-family: Rubik;
+		opacity: 0.85;
+	}
+	
+	.content {
+		font-size: 1.25rem;
+		color: white;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		align-items: flex-end;
+		min-width: 25rem;
+		position: absolute;
+		right: 2rem;
+		bottom: 2rem;
+	}
+	
+	.entry {
+		display: flex;
+		flex-direction: row;
+		margin-top: 0.5rem;
+	}
+	
+	.entry-text {
+		border: 1px solid #fff8;
+		background-color: rgba(0,0,0,0.7);
+		padding: 0.5rem;
+		text-transform: uppercase;
+	}
+	
+        </style>
+    </head>
+
+    <body>
+
+		<div class="content">
+		
+			<div class="entry" data-bind-for="entry:{{prompts.entries}}">
+				<span class="entry-text" data-bind-html="{{entry}}"></span>
+			</div>
+		
+		</div>
+
+        <script>
+
+            engine.createJSModel('prompts',
+            {
+                entries: [
+                	"Press <div class='crayta--key'>A</div> to jump",
+                	"Press <div class='crayta--icon'>B</div> to do something else with a really long description",
+                ],
+            });
+            
+        </script>
+    </body>
+</html>
