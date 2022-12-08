@@ -1,0 +1,114 @@
+local Sc_testAttach = {}
+
+-- Script properties are defined here
+Sc_testAttach.Properties = {
+	-- Example property
+	{name = "skt", type = "occupyasset", },
+	{name = "isDriving", type = "boolean",editable = false, default = false},
+	{name = "vehicleRoot", type = "entity",editable = false,},
+	{name = "onPlayerSit", type = "event",},
+	{name = "onPlayerGetUp", type = "event",},
+}
+
+--This function is called on the server when this entity is created
+function Sc_testAttach:Init()
+end
+
+function Sc_testAttach:Sit(player, obj)
+	if IsServer() then 
+		self.placeBack = player:GetPosition()
+		self.properties.isDriving = true 
+		local usr = player:GetUser()
+		usr:SendToScripts("AddNotification", "Driving vehicle")
+		--option1-------------------
+		--player:StartOccupy(obj)
+		------------------------------
+		
+		---option2---------------
+		--player.speedMultiplier = 0
+		player:StartOccupy(obj, self.properties.skt)		
+		player.cameraType = CameraType.Orbit
+		self.currentWagon = obj
+		self.properties.vehicleRoot = obj:GetParent()
+		
+		local vehicleRoot = self.currentWagon:GetParent()
+		local gun = vehicleRoot.sc_testEnterWagon:GetGunVehicle()
+		player:SendToScripts("ShowGun", true, gun) 
+		local root = self.properties.vehicleRoot
+		local seat = obj
+		self.properties.onPlayerSit:Send(player, seat, root, gun)
+		--------------------------	
+		
+		---option3---------------
+		--player.speedMultiplier = 0
+		--player:AttachTo(obj, "seat")
+		--------------------------	
+		
+		---option4---------------
+		--player.speedMultiplier = 0
+		--player:SetPosition(obj:GetPosition() + Vector.New(0,0,50))	
+		--------------------------	
+		
+		---option5---------------
+		--player:SetPosition(obj:GetPosition() + Vector.New(0,0,50))
+		--player.cameraType = CameraType.Orbit	
+		--------------------------	
+		
+		---option6---------------
+		--self:SendToAllClients("Sit", player, obj)
+		--------------------------	
+	else 
+		--[[ LOCAL 
+		obj.collisionEnabled = false 
+		self:Schedule(function()
+			while true do 
+				Wait()
+				player:SetPosition(obj:GetPosition())
+			end 
+		end)
+		]]--
+	end 
+end 
+
+function Sc_testAttach:GetUp()
+	if IsServer() then 
+		local player = self:GetEntity()
+		--activate trg for re-entry 
+		if self.currentWagon then 
+			local vehicleRoot = self.currentWagon:GetParent()
+			local trgVehicle = vehicleRoot.sc_testEnterWagon:GetTriggerVehicle()
+			if trgVehicle then 
+				trgVehicle.active = true  
+			end 		
+			if player:IsOccupying() then 
+				player:EndOccupy()
+				self.properties.isDriving = false  
+				local usr = player:GetUser()
+				usr:SendToScripts("AddNotification", "Not Driving vehicle")
+				local seat = self.currentWagon
+				local root = vehicleRoot
+				local gun = vehicleRoot.sc_testEnterWagon:GetGunVehicle()
+				self.properties.onPlayerGetUp:Send(player, seat, root, gun)
+				if self.placeBack then 
+					--player:SetPosition(self.placeBack)
+					player:SetPosition(self.currentWagon:GetPosition())
+					player.cameraType = CameraType.Action
+				end 
+			end 
+		end 
+	else 
+		self:SendToServer("GetUp")
+	end 
+end 
+
+--[[
+function Sc_testAttach:LocalOnButtonPressed(btn)
+	if btn == "extra1" then 
+		self:GetUp()
+	end 
+end 
+]]-- 
+
+---AT THE END  vehicle = NIL 
+
+return Sc_testAttach
