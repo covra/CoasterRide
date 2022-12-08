@@ -1,0 +1,60 @@
+<html>
+    <head>
+        <!-- Required includes -->
+        <script type="text/javascript" src="coui://uiresources/js/crayta.js"></script>
+
+        <style type="text/css">
+        	body {
+        		width: 100%;
+        		height: 100%;
+        		padding: 0;
+        		margin: 0;
+        	}
+        
+            .container {
+                position: absolute;
+                bottom: 0;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background-color: rgba(20, 20, 20, 0.8);
+                padding: 0 1rem 1rem 1rem;
+                border-radius: 1rem;
+            }
+            
+            .prompt {
+            	width: 100%;
+            	background-color: rgba(0, 0, 0, 0.8);
+            	padding: 1rem;
+            	border-radius: 1rem;
+            	margin-top: 1rem;
+            	text-align: center;
+            }
+            
+            .msg {
+            	color: white;
+            	font-size: 3rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="prompt" data-bind-for="prompt:{{data.prompts}}">
+            	<div class="msg" data-bind-html="{{prompt}}.msg"></div>
+            </div>
+        </div>
+
+        <script>
+            engine.createJSModel('data',
+            {
+                prompts: [
+                	{msg: "Press E to do something"},
+                	{msg: "Press A to do another thing"},
+                ],
+            });
+        </script>
+    </body>
+</html>
